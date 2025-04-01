@@ -1,14 +1,15 @@
 import sqlite3
 
-def agregar_productos():
-    conexion = sqlite3.connect("pos.db")
-    cursor = conexion.cursor()
+conexion = sqlite3.connect("pos.db")
+cursor = conexion.cursor()
 
-    productos = [
+#Una vez agregados los productos se pueden borrar de este código y si en un futuro es necesario agregar más solo se agrega el nuevo producto
+
+productos = [
         ("Laptop HP", 15000.00, 5),
         ("Mouse Logitech", 500.00, 20),
         ("Teclado mecánico", 1200.00, 15),
-        ("Monitor Samsung 24\"", 4000.00, 10),
+        ("Monitor Samsung 24", 4000.00, 10),
         ("Auriculares Gamer", 2500.00, 8),
         ("Smartphone Samsung", 12000.00, 6),
         ("Impresora HP", 3000.00, 7),
@@ -24,15 +25,12 @@ def agregar_productos():
         ("Mochila Jansport", 1300.00, 10),
         ("Lentes de sol Ray-Ban", 2500.00, 7),
         ("Cinturón de cuero", 700.00, 12),
-        ("Chaqueta de cuero", 3500.00, 5)
+        ("Chaqueta de cuero", 3500.00, 5),
+        ("Producto nuevo", 113500.00, 5000)
     ]
 
-    cursor.executemany("INSERT INTO productos (nombre, precio, stock) VALUES (?, ?, ?)", productos)
+cursor.executemany("INSERT INTO productos (nombre, precio, stock) VALUES (?, ?, ?)", productos)
     
-    conexion.commit()
-    conexion.close()
-    print("Productos agregados correctamente.")
-
-# Ejecutar función
-if __name__ == "__main__":
-    agregar_productos()
+conexion.commit()
+conexion.close()
+print("Productos agregados correctamente.")
