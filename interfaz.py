@@ -35,26 +35,37 @@ class PuntoDeVenta(QMainWindow):
         self.btn_eliminar = QPushButton("Eliminar seleccionado")
         self.btn_eliminar.clicked.connect(self.eliminar_del_carrito)
         self.panel_derecho.addWidget(self.btn_eliminar)
+        self.btn_eliminar.setStyleSheet("background-color: #CD5C5C; color: white; font-weight: bold; border-radius: 10px; padding: 5px;")
 
         # Botón para procesar venta
         self.btn_procesar = QPushButton("Procesar Venta")
         self.btn_procesar.clicked.connect(self.procesar_venta)
         self.panel_derecho.addWidget(self.btn_procesar)
+        self.btn_procesar.setStyleSheet("background-color: #2E86C1; color: white; font-weight: bold; border-radius: 10px; padding: 5px;")
 
         # Botón para restock
         self.btn_restock = QPushButton("Restock de Productos")
         self.btn_restock.clicked.connect(self.restock_producto)
         self.panel_derecho.addWidget(self.btn_restock)
+        self.btn_restock.setStyleSheet("background-color: #F39C12; color: white; font-weight: bold; border-radius: 10px; padding: 5px;")
+
+        # Botón para eliminar producto
+        self.btn_eliminar = QPushButton("Eliminar producto")
+        self.btn_eliminar.clicked.connect(self.eliminar_producto)
+        self.panel_derecho.addWidget(self.btn_eliminar)
+        self.btn_eliminar.setStyleSheet("background-color: #B03A2E; color: white; font-weight: bold; border-radius: 10px; padding: 5px;")
 
         # Botón para exportar ventas a Excel
         self.btn_exportar = QPushButton("Exportar Ventas a Excel")
         self.btn_exportar.clicked.connect(self.exportar_ventas_excel)
         self.panel_derecho.addWidget(self.btn_exportar)
+        self.btn_exportar.setStyleSheet("background-color: #27AE60; color: white; font-weight: bold; border-radius: 10px; padding: 5px;")
 
         # Botón para limpiar el cache (eliminar ventas)
-        self.btn_limpiar_cache = QPushButton("Limpiar Cache")
+        self.btn_limpiar_cache = QPushButton("Limpiar Caché")
         self.btn_limpiar_cache.clicked.connect(self.limpiar_cache)
         self.panel_derecho.addWidget(self.btn_limpiar_cache)
+        self.btn_limpiar_cache.setStyleSheet("background-color: grey; color: white; font-weight: bold; border-radius: 10px; padding: 5px;")
 
         # Total
         self.total_label = QLabel("Total: $0.00")
@@ -146,11 +157,31 @@ class PuntoDeVenta(QMainWindow):
 
         # Insertar los productos en detalle_ventas y actualizar stock
         for id_producto, _, precio in self.carrito:
+            #print(id_producto, precio, _, venta_id)
             cursor.execute("INSERT INTO detalle_ventas (venta_id, producto_id, cantidad, subtotal) VALUES (?, ?, 1, ?)",
                            (venta_id, id_producto, precio))
             cursor.execute("UPDATE productos SET stock = stock - 1 WHERE id = ?", (id_producto,))
 
         conexion.commit()
+        
+        cursor.execute("SELECT n.nombre, dv.cantidad, dv.subtotal FROM detalle_ventas dv JOIN productos n ON dv.producto_id = n.id WHERE dv.venta_id=?", (venta_id,))
+        articulos = cursor.fetchall()
+
+        cursor.execute("SELECT total FROM ventas WHERE id=?", (venta_id,))
+        total = cursor.fetchone()
+
+        print("\n")
+        print("--------------Ticket de venta-------------")
+        print(f"Id de la venta:", venta_id)
+        print("------------------------------------------")
+        print(f"{'nombre':<20}{'cantidad':<10}{'subtotal':<10}")
+        for nombre, cantidad, subtotal in articulos:
+            print(f"{nombre:<20}{cantidad:<12}{subtotal:<10.2f}")
+        print("------------------------------------------")
+        print(f"{'El total es: ':<30}${total[0]:.2f}")
+        print("------------------------------------------")
+        print("\n")
+
         conexion.close()
 
         # Limpiar carrito y actualizar la tabla
@@ -189,6 +220,37 @@ class PuntoDeVenta(QMainWindow):
 
                 self.actualizar_tabla()
                 print("Stock actualizado correctamente")
+
+    def eliminar_producto(self):
+        conexion = sqlite3.connect("pos.db")
+        cursor = conexion.cursor()
+        cursor.execute("SELECT id, nombre FROM productos")
+        productos = cursor.fetchall()
+        conexion.close()
+
+        if not productos:
+            print("No hay productos disponibles.")
+            return
+
+        # Mostrar cuadro de diálogo para seleccionar producto
+        items = [f"{p[0]} - {p[1]}" for p in productos]
+        item, ok = QInputDialog.getItem(self, "Eliminar artículo", "Selecciona un producto:", items, 0, False)
+
+        if ok and item:
+            id_producto = int(item.split(" - ")[0])  # Obtener el ID del producto
+            codigo, ok = QInputDialog.getInt(self, "codigo", "Ingrese el código:")
+
+            if ok and codigo == 123:
+                conexion = sqlite3.connect("pos.db")
+                cursor = conexion.cursor()
+                cursor.execute("DELETE FROM productos WHERE id=?", (id_producto, ))
+                conexion.commit()
+                conexion.close()
+
+                self.actualizar_tabla()
+                print("Articulo eliminado correctamente")
+            else :
+                print("No se ha eliminado el articulo - Código Incorrecto")
 
     def exportar_ventas_excel(self):
         conexion = sqlite3.connect("pos.db")
